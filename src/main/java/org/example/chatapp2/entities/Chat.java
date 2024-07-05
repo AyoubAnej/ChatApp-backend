@@ -20,10 +20,13 @@ public class Chat {
     private String chatName;
     private String chatImage;
 
+    @ManyToMany
+    private Set<User> admins = new HashSet<>();
+
     @Column(name = "is_group")
     private boolean isGroup;
 
-    @Column(name = "created_by")
+    @JoinColumn(name = "created_by")
     @ManyToOne
     private User createdBy;
 
