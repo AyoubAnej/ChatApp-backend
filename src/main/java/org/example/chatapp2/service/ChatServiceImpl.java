@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,21 +25,20 @@ public class ChatServiceImpl implements ChatService {
     private final MessageService messageService;
 
     @Override
-    public ChatDTO createChat(User reqUser, Integer userId2) throws UserException {
-        UserDTO userDTO = userService.findUserById(userId2);
-        User user = userService.convertToEntity(userDTO);
+    public ChatDTO createChat(UserDTO reqUser, Integer userId2) throws UserException {
+        User user1 = userService.convertToEntity(reqUser);
+        User user2 = userService.convertToEntity(userService.findUserById(userId2));
 
-        Chat isChatExist = chatRepository.findSingleChatByUserIds(user, reqUser);
-
-        if (isChatExist != null) {
-            return convertToDTO(isChatExist);
+        Chat existingChat = chatRepository.findSingleChatByUserIds(user1, user2);
+        if (existingChat != null) {
+            return convertToDTO(existingChat);
         }
-        Chat chat = new Chat();
-        chat.setCreatedBy(reqUser);
-        chat.getUsers().add(user);
-        chat.getUsers().add(reqUser);
-        chat.setGroup(false);
 
+        Chat chat = new Chat();
+        chat.setCreatedBy(user1);
+        chat.getUsers().add(user1);
+        chat.getUsers().add(user2);
+        chat.setGroup(false);
         chat = chatRepository.save(chat);
         return convertToDTO(chat);
     }
@@ -54,25 +52,25 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public List<ChatDTO> findAllChatByUserId(Integer userId) throws UserException {
-        UserDTO userDTO = userService.findUserById(userId);
-        User user = userService.convertToEntity(userDTO);
+        User user = userService.convertToEntity(userService.findUserById(userId));
         List<Chat> chats = chatRepository.findChatByUserId(user.getId());
         return chats.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Override
-    public ChatDTO createGroup(GroupChatRequest req, User reqUser) throws UserException {
+    public ChatDTO createGroup(GroupChatRequest req, UserDTO reqUser) throws UserException {
+        User user = userService.convertToEntity(reqUser);
+
         Chat group = new Chat();
         group.setGroup(true);
         group.setChatImage(req.getChatImage());
         group.setChatName(req.getChatName());
-        group.setCreatedBy(reqUser);
-        group.getAdmins().add(reqUser);
+        group.setCreatedBy(user);
+        group.getAdmins().add(user);
 
         for (Integer userId : req.getUserIds()) {
-            UserDTO userDTO = userService.findUserById(userId);
-            User user = userService.convertToEntity(userDTO);
-            group.getUsers().add(user);
+            User groupUser = userService.convertToEntity(userService.findUserById(userId));
+            group.getUsers().add(groupUser);
         }
 
         group = chatRepository.save(group);
@@ -80,13 +78,13 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ChatDTO addUserToGroup(Integer userId, Integer chatId, User reqUser) throws UserException, ChatException {
+    public ChatDTO addUserToGroup(Integer userId, Integer chatId, UserDTO reqUser) throws UserException, ChatException {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new ChatException("Chat not found with id " + chatId));
-        UserDTO userDTO = userService.findUserById(userId);
-        User user = userService.convertToEntity(userDTO);
+        User user = userService.convertToEntity(userService.findUserById(userId));
+        User requestingUser = userService.convertToEntity(reqUser);
 
-        if (chat.getAdmins().contains(reqUser)) {
+        if (chat.getAdmins().contains(requestingUser)) {
             chat.getUsers().add(user);
             chat = chatRepository.save(chat);
             return convertToDTO(chat);
@@ -96,11 +94,12 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ChatDTO renameGroup(Integer chatId, String groupName, User reqUser) throws UserException, ChatException {
+    public ChatDTO renameGroup(Integer chatId, String groupName, UserDTO reqUser) throws UserException, ChatException {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new ChatException("Chat not found with id " + chatId));
+        User requestingUser = userService.convertToEntity(reqUser);
 
-        if (chat.getUsers().contains(reqUser)) {
+        if (chat.getUsers().contains(requestingUser)) {
             chat.setChatName(groupName);
             chat = chatRepository.save(chat);
             return convertToDTO(chat);
@@ -110,24 +109,23 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ChatDTO removeFormGroup(Integer chatId, Integer userId, User reqUser) throws UserException, ChatException {
+    public ChatDTO removeFromGroup(Integer chatId, Integer userId, UserDTO reqUser) throws UserException, ChatException {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new ChatException("Chat not found with id " + chatId));
-        UserDTO userDTO = userService.findUserById(userId);
-        User user = userService.convertToEntity(userDTO);
+        User user = userService.convertToEntity(userService.findUserById(userId));
+        User requestingUser = userService.convertToEntity(reqUser);
 
-        if (chat.getAdmins().contains(reqUser)) {
+        if (chat.getAdmins().contains(requestingUser)) {
             chat.getUsers().remove(user);
             chat = chatRepository.save(chat);
             return convertToDTO(chat);
-        } else if (chat.getUsers().contains(reqUser)) {
-            if (user.getId().equals(reqUser.getId())) {
-                chat.getUsers().remove(user);
-                chat = chatRepository.save(chat);
-                return convertToDTO(chat);
-            }
+        } else if (chat.getUsers().contains(requestingUser) && requestingUser.equals(user)) {
+            chat.getUsers().remove(user);
+            chat = chatRepository.save(chat);
+            return convertToDTO(chat);
+        } else {
+            throw new UserException("You can't remove another user");
         }
-        throw new UserException("You can't remove another user");
     }
 
     @Override
@@ -144,25 +142,16 @@ public class ChatServiceImpl implements ChatService {
         chatDTO.setChatName(chat.getChatName());
         chatDTO.setChatImage(chat.getChatImage());
         chatDTO.setGroup(chat.isGroup());
-
-        // Convert createdBy to UserDTO
         chatDTO.setCreatedBy(userService.convertToDTO(chat.getCreatedBy()));
-
-        // Convert users and admins to Set<UserDTO>
         chatDTO.setUsers(chat.getUsers().stream()
                 .map(userService::convertToDTO)
                 .collect(Collectors.toSet()));
-
         chatDTO.setAdmins(chat.getAdmins().stream()
                 .map(userService::convertToDTO)
                 .collect(Collectors.toSet()));
-
-        // Convert messages to List<MessageDTO>
-        // Assume a similar method exists in a MessageService for message conversion
         chatDTO.setMessages(chat.getMessages().stream()
                 .map(messageService::convertToDTO)
                 .collect(Collectors.toList()));
-
         return chatDTO;
     }
 
@@ -173,25 +162,16 @@ public class ChatServiceImpl implements ChatService {
         chat.setChatName(chatDTO.getChatName());
         chat.setChatImage(chatDTO.getChatImage());
         chat.setGroup(chatDTO.isGroup());
-
-        // Convert createdBy from UserDTO to User
         chat.setCreatedBy(userService.convertToEntity(chatDTO.getCreatedBy()));
-
-        // Convert users and admins from Set<UserDTO> to Set<User>
         chat.setUsers(chatDTO.getUsers().stream()
                 .map(userService::convertToEntity)
                 .collect(Collectors.toSet()));
-
         chat.setAdmins(chatDTO.getAdmins().stream()
                 .map(userService::convertToEntity)
                 .collect(Collectors.toSet()));
-
-        // Convert messages from List<MessageDTO> to List<Message>
-        // Assume a similar method exists in a MessageService for message conversion
         chat.setMessages(chatDTO.getMessages().stream()
                 .map(messageService::convertToEntity)
                 .collect(Collectors.toList()));
-
         return chat;
     }
 }

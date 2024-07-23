@@ -25,5 +25,5 @@ public interface MessageService {
 
     MessageDTO convertToDTO(Message message);
 
-    Message convertToEntity(MessageDTO messageDTO) throws UserException, ChatException;
+    Message convertToEntity(MessageDTO messageDTO);
 }

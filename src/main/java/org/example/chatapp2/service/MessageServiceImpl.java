@@ -83,14 +83,26 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public Message convertToEntity(MessageDTO messageDTO) throws UserException, ChatException {
+    public Message convertToEntity(MessageDTO messageDTO) {
         Message message = new Message();
         message.setId(messageDTO.getId());
         message.setContent(messageDTO.getContent());
         message.setTimeStamp(LocalDateTime.parse(messageDTO.getTimestamp())); // Ensure timestamp is properly formatted
 
-        User user = userService.convertToEntity(userService.findUserById(messageDTO.getSenderId()));
-        Chat chat = chatService.convertToEntity(chatService.findChatById(messageDTO.getChatId()));
+        User user = null;
+        try {
+            user = userService.convertToEntity(userService.findUserById(messageDTO.getSenderId()));
+        } catch (UserException e) {
+            throw new RuntimeException(e);
+        }
+        Chat chat = null;
+        try {
+            chat = chatService.convertToEntity(chatService.findChatById(messageDTO.getChatId()));
+        } catch (UserException e) {
+            throw new RuntimeException(e);
+        } catch (ChatException e) {
+            throw new RuntimeException(e);
+        }
 
         message.setUser(user);
         message.setChat(chat);
