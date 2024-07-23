@@ -16,10 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -56,7 +53,7 @@ public class AuthController {
 
         AuthResponse res = new AuthResponse(jwt, true);
 
-        return new ResponseEntity<AuthResponse>(res, HttpStatus.ACCEPTED);
+        return new ResponseEntity<AuthResponse>(res, HttpStatus.CREATED);
     }
 
     public ResponseEntity<AuthResponse> loginHandler(@RequestBody LoginRequest req){

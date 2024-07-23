@@ -1,8 +1,9 @@
 package org.example.chatapp2.controller;
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import org.example.chatapp2.entities.Message;
+import org.example.chatapp2.dto.MessageDTO;
+import org.example.chatapp2.dto.UserDTO;
+import org.example.chatapp2.entities.Chat;
 import org.example.chatapp2.entities.User;
 import org.example.chatapp2.exception.ChatException;
 import org.example.chatapp2.exception.MessageException;
@@ -11,6 +12,7 @@ import org.example.chatapp2.request.SendMessageRequest;
 import org.example.chatapp2.response.ApiResponse;
 import org.example.chatapp2.service.MessageService;
 import org.example.chatapp2.service.UserService;
+import org.example.chatapp2.service.ChatService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,43 +21,61 @@ import java.util.List;
 
 @RestController
 @AllArgsConstructor
-@NoArgsConstructor
 @RequestMapping("/api/messages")
 public class MessageController {
 
-    private MessageService messageService;
-    private UserService userService;
+    private final MessageService messageService;
+    private final UserService userService;
+    private final ChatService chatService;
 
     @PostMapping("/create")
-    public ResponseEntity<Message> sendMessageHandler(@RequestBody SendMessageRequest req, @RequestHeader("Authorization") String jwt) throws UserException, ChatException {
-        User user = userService.findUserByProfile(jwt);
+    public ResponseEntity<MessageDTO> sendMessageHandler(@RequestBody SendMessageRequest req, @RequestHeader("Authorization") String jwt) {
+        try {
+            UserDTO userDTO = userService.findUserByProfile(jwt);
+            req.setUserId(userDTO.getId());
 
-        req.setUserId(user.getId());
-        Message message = messageService.sendMessage(req);
+            // Convert UserDTO to User
+            User user = userService.convertToEntity(userDTO);
 
-        return new ResponseEntity<>(message, HttpStatus.OK);
+            // Convert ChatDTO to Chat
+            Chat chat = chatService.convertToEntity(chatService.findChatById(req.getChatId()));
+
+            // Send message
+            MessageDTO messageDTO = messageService.sendMessage(req);
+            return new ResponseEntity<>(messageDTO, HttpStatus.CREATED);
+        } catch (UserException | ChatException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
     }
+
     @GetMapping("/chat/{chatId}")
-    public ResponseEntity<List<Message>> getChatsMessagesHandler(@PathVariable Integer chatId, @RequestHeader("Authorization") String jwt) throws UserException, ChatException {
+    public ResponseEntity<List<MessageDTO>> getChatsMessagesHandler(@PathVariable Integer chatId, @RequestHeader("Authorization") String jwt) {
+        try {
+            UserDTO userDTO = userService.findUserByProfile(jwt);
+            // Convert UserDTO to User
+            User user = userService.convertToEntity(userDTO);
 
-        User user = userService.findUserByProfile(jwt);
-
-        List<Message> messages = messageService.getChatsMessages(chatId, user);
-
-        return new ResponseEntity<>(messages, HttpStatus.OK);
+            // Fetch messages
+            List<MessageDTO> messages = messageService.getChatsMessages(chatId, user);
+            return new ResponseEntity<>(messages, HttpStatus.OK);
+        } catch (UserException | ChatException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
     }
 
     @DeleteMapping("/{messageId}")
-    public ResponseEntity<ApiResponse> deleteMessageHandler(@PathVariable Integer messageId, @RequestHeader("Authorization") String jwt) throws UserException, MessageException {
+    public ResponseEntity<ApiResponse> deleteMessageHandler(@PathVariable Integer messageId, @RequestHeader("Authorization") String jwt) {
+        try {
+            UserDTO userDTO = userService.findUserByProfile(jwt);
+            // Convert UserDTO to User
+            User user = userService.convertToEntity(userDTO);
 
-        User user = userService.findUserByProfile(jwt);
-
-        messageService.deleteMessage(messageId, user);
-
-        ApiResponse res = new ApiResponse("Message deleted successfully", false);
-
-        return new ResponseEntity<>(res, HttpStatus.OK);
+            messageService.deleteMessage(messageId, user);
+            ApiResponse response = new ApiResponse("Message deleted successfully", false);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (UserException | MessageException e) {
+            ApiResponse response = new ApiResponse("Failed to delete message: " + e.getMessage(), true);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
     }
-
-
 }
