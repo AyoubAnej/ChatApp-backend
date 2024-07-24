@@ -19,7 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping(value = "/auth", produces = "application/json")
 @AllArgsConstructor
 public class AuthController {
 
@@ -55,7 +55,7 @@ public class AuthController {
 
         return new ResponseEntity<AuthResponse>(res, HttpStatus.CREATED);
     }
-
+    @PostMapping("/login")
     public ResponseEntity<AuthResponse> loginHandler(@RequestBody LoginRequest req){
         String email = req.getEmail();
         String password = req.getPassword();

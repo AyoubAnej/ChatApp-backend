@@ -2,6 +2,7 @@ package org.example.chatapp2.service;
 
 import lombok.AllArgsConstructor;
 import org.example.chatapp2.dto.ChatDTO;
+import org.example.chatapp2.dto.MessageDTO;
 import org.example.chatapp2.dto.UserDTO;
 import org.example.chatapp2.entities.Chat;
 import org.example.chatapp2.entities.User;
@@ -9,7 +10,6 @@ import org.example.chatapp2.exception.ChatException;
 import org.example.chatapp2.exception.UserException;
 import org.example.chatapp2.repositories.ChatRepository;
 import org.example.chatapp2.request.GroupChatRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,8 +21,6 @@ public class ChatServiceImpl implements ChatService {
 
     private final ChatRepository chatRepository;
     private final UserService userService;
-    @Autowired
-    private final MessageService messageService;
 
     @Override
     public ChatDTO createChat(UserDTO reqUser, Integer userId2) throws UserException {
@@ -150,7 +148,7 @@ public class ChatServiceImpl implements ChatService {
                 .map(userService::convertToDTO)
                 .collect(Collectors.toSet()));
         chatDTO.setMessages(chat.getMessages().stream()
-                .map(messageService::convertToDTO)
+                .map(message -> new MessageDTO(message.getId(), message.getContent(), message.getUser().getId(), message.getChat().getId(), message.getTimeStamp().toString()))
                 .collect(Collectors.toList()));
         return chatDTO;
     }
@@ -169,9 +167,6 @@ public class ChatServiceImpl implements ChatService {
         chat.setAdmins(chatDTO.getAdmins().stream()
                 .map(userService::convertToEntity)
                 .collect(Collectors.toSet()));
-        chat.setMessages(chatDTO.getMessages().stream()
-                .map(messageService::convertToEntity)
-                .collect(Collectors.toList()));
         return chat;
     }
 }
