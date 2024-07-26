@@ -8,6 +8,7 @@ import org.example.chatapp2.repositories.UserRepository;
 import org.example.chatapp2.request.LoginRequest;
 import org.example.chatapp2.response.AuthResponse;
 import org.example.chatapp2.service.CustomUserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -22,10 +23,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(value = "/auth", produces = "application/json")
 @AllArgsConstructor
 public class AuthController {
-
+    @Autowired
     private UserRepository userRepository;
+    @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
     private TokenProvider tokenProvider;
+    @Autowired
     private CustomUserService customUserService;
 
 
@@ -55,7 +59,7 @@ public class AuthController {
 
         return new ResponseEntity<AuthResponse>(res, HttpStatus.CREATED);
     }
-    @PostMapping("/login")
+    @PostMapping("/signin")
     public ResponseEntity<AuthResponse> loginHandler(@RequestBody LoginRequest req){
         String email = req.getEmail();
         String password = req.getPassword();

@@ -8,6 +8,7 @@ import org.example.chatapp2.exception.UserException;
 import org.example.chatapp2.request.UpdateUserRequest;
 import org.example.chatapp2.response.ApiResponse;
 import org.example.chatapp2.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,9 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserController {
+    @Autowired
     private UserService userService;
+    @Autowired
     private TokenProvider tokenProvider;
 
     @GetMapping("/profile")

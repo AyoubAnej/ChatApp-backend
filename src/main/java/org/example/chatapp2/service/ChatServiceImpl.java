@@ -10,6 +10,7 @@ import org.example.chatapp2.exception.ChatException;
 import org.example.chatapp2.exception.UserException;
 import org.example.chatapp2.repositories.ChatRepository;
 import org.example.chatapp2.request.GroupChatRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,8 +19,9 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 public class ChatServiceImpl implements ChatService {
-
+    @Autowired
     private final ChatRepository chatRepository;
+    @Autowired
     private final UserService userService;
 
     @Override
