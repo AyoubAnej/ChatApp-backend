@@ -31,8 +31,8 @@ public class UserController {
         return new ResponseEntity<>(userDTO, HttpStatus.OK);
     }
 
-    @GetMapping("/{query}")
-    public ResponseEntity<List<UserDTO>> searchUserHandler(@PathVariable("query") String query) {
+    @GetMapping("/search")
+    public ResponseEntity<List<UserDTO>> searchUserHandler(@RequestParam("name") String query) {
         List<UserDTO> users = userService.searchUser(query);
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
