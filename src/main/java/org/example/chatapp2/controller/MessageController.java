@@ -48,18 +48,17 @@ public class MessageController {
         }
     }
 
-    @GetMapping("/chat/{chatId}")
-    public ResponseEntity<List<MessageDTO>> getChatsMessagesHandler(@PathVariable Integer chatId, @RequestHeader("Authorization") String jwt) {
+    @GetMapping(value = "/chat/{chatId}", produces = "application/json")
+    public ResponseEntity<?> getChatsMessagesHandler(@PathVariable Integer chatId, @RequestHeader("Authorization") String jwt) {
         try {
             UserDTO userDTO = userService.findUserByProfile(jwt);
-            // Convert UserDTO to User
             User user = userService.convertToEntity(userDTO);
-
-            // Fetch messages
             List<MessageDTO> messages = messageService.getChatsMessages(chatId, user);
             return new ResponseEntity<>(messages, HttpStatus.OK);
         } catch (UserException | ChatException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return ResponseEntity.badRequest().body(new ApiResponse(e.getMessage(), true));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse("Internal server error", true));
         }
     }
 

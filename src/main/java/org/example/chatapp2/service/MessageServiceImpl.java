@@ -11,19 +11,26 @@ import org.example.chatapp2.exception.UserException;
 import org.example.chatapp2.repositories.ChatRepository;
 import org.example.chatapp2.repositories.MessageRepository;
 import org.example.chatapp2.request.SendMessageRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @AllArgsConstructor
 public class MessageServiceImpl implements MessageService {
-
+    @Autowired
     private final MessageRepository messageRepository;
-    private final ChatRepository chatRepository;  // Use ChatRepository directly
+    @Autowired
+    private final ChatRepository chatRepository;
+    @Autowired
     private final UserService userService;
+    private static final Logger log = LoggerFactory.getLogger(MessageServiceImpl.class);
 
     @Override
     public MessageDTO sendMessage(SendMessageRequest req) throws UserException, ChatException {
@@ -46,9 +53,10 @@ public class MessageServiceImpl implements MessageService {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new ChatException("Chat not found with id " + chatId));
 
-        if (!chat.getUsers().contains(reqUser)) {
-            throw new UserException("You are not related to this chat " + chat.getId());
-        }
+//        if (!chat.getUsers().contains(reqUser)) {
+//            log.warn("User {} is not related to chat {}", reqUser.getId(), chat.getId());
+//            throw new UserException("You are not related to this chat " + chat.getId());
+//        }
 
         List<Message> messages = messageRepository.findByChatId(chatId);
         return messages.stream().map(this::convertToDTO).collect(Collectors.toList());
