@@ -13,21 +13,28 @@ import org.example.chatapp2.response.ApiResponse;
 import org.example.chatapp2.service.MessageService;
 import org.example.chatapp2.service.UserService;
 import org.example.chatapp2.service.ChatService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/messages")
 public class MessageController {
-
+    @Autowired
     private final MessageService messageService;
+    @Autowired
     private final UserService userService;
+    @Autowired
     private final ChatService chatService;
 
+    private static final Logger log = LoggerFactory.getLogger(MessageController.class);
     @PostMapping("/create")
     public ResponseEntity<MessageDTO> sendMessageHandler(@RequestBody SendMessageRequest req, @RequestHeader("Authorization") String jwt) {
         try {
@@ -49,17 +56,21 @@ public class MessageController {
     }
 
     @GetMapping("/chat/{chatId}")
-    public ResponseEntity<List<MessageDTO>> getChatsMessagesHandler(@PathVariable Integer chatId, @RequestHeader("Authorization") String jwt) {
+    public ResponseEntity<List<MessageDTO>> getChatsMessagesHandler(
+            @PathVariable Integer chatId,
+            @RequestHeader("Authorization") String jwt) {
+
         try {
             UserDTO userDTO = userService.findUserByProfile(jwt);
-            // Convert UserDTO to User
             User user = userService.convertToEntity(userDTO);
 
-            // Fetch messages
             List<MessageDTO> messages = messageService.getChatsMessages(chatId, user);
             return new ResponseEntity<>(messages, HttpStatus.OK);
+
         } catch (UserException | ChatException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            // Log the error for debugging
+            log.error("Error fetching messages: {}", e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
