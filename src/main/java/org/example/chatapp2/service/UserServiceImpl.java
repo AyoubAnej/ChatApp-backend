@@ -43,27 +43,31 @@ public class UserServiceImpl implements UserService {
         return users.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    @Override
     public void updateUser(Integer id, UpdateUserRequest request) throws UserException {
         User user = userRepository.findById(id).orElseThrow(() -> new UserException("User not found"));
-        // Update fields
-        user.setFull_name(request.getFull_name());
-        user.setProfile_picture(request.getProfile_picture());
+
+        if (request.getFullName() != null && !request.getFullName().equals("undefined")) {
+            user.setFullName(request.getFullName());
+        }
+        if (request.getProfilePicture() != null && !request.getProfilePicture().equals("undefined")) {
+            user.setProfilePicture(request.getProfilePicture());
+        }
+
         userRepository.save(user);
     }
 
     @Override
     public UserDTO convertToDTO(User user) {
-        return new UserDTO(user.getId(), user.getFull_name(), user.getEmail(), user.getProfile_picture());
+        return new UserDTO(user.getId(), user.getFullName(), user.getEmail(), user.getProfilePicture());
     }
 
     @Override
     public User convertToEntity(UserDTO userDTO) {
         User user = new User();
         user.setId(userDTO.getId());
-        user.setFull_name(userDTO.getFullName());
+        user.setFullName(userDTO.getFullName());
         user.setEmail(userDTO.getEmail());
-        user.setProfile_picture(userDTO.getProfilePicture());
+        user.setProfilePicture(userDTO.getProfilePicture());
         return user;
     }
 }

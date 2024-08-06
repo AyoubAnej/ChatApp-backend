@@ -12,5 +12,4 @@ public class UserDTO {
     private String fullName;
     private String email;
     private String profilePicture;
-    // Note: password must not be here
 }

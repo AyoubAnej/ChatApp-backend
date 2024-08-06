@@ -14,10 +14,10 @@ import java.util.Objects;
 @Table(name = "ourUser")
 public class User {
     @Id @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer Id;
-    private String full_name;
+    private Integer id;
+    private String fullName;
     private String email;
-    private String profile_picture;
+    private String profilePicture;
     private String password;
 //    @OneToMany(mappedBy = "ouruser", cascade = CascadeType.ALL)
 //    private List<Notification> notifications = new ArrayList<>();
@@ -28,11 +28,11 @@ public class User {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return Objects.equals(Id, user.Id) && Objects.equals(full_name, user.full_name) && Objects.equals(email, user.email) && Objects.equals(profile_picture, user.profile_picture) && Objects.equals(password, user.password);
+        return Objects.equals(id, user.id) && Objects.equals(fullName, user.fullName) && Objects.equals(email, user.email) && Objects.equals(profilePicture, user.profilePicture) && Objects.equals(password, user.password);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(Id, full_name, email, profile_picture, password);
+        return Objects.hash(id, fullName, email, profilePicture, password);
     }
 }

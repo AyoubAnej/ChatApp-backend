@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class MessageDTO {
     private Integer id;
     private String content;
-    private Integer senderId; // or UserDTO sender if you prefer
+    private Integer senderId;
     private Integer chatId;
-    private String timestamp; // or Date type if preferred
+    private String timestamp;
 }

@@ -1,5 +1,6 @@
 package org.example.chatapp2.controller;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.example.chatapp2.config.TokenProvider;
@@ -37,12 +38,25 @@ public class UserController {
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<ApiResponse> updateUserHandler(@RequestBody UpdateUserRequest req, @RequestHeader("Authorization") String token) throws UserException {
+    @PutMapping(value = "/update/{id}", produces = "application/json")
+    public ResponseEntity<ApiResponse> updateUserHandler(
+            @PathVariable("id") Integer id,
+            @Valid @RequestBody UpdateUserRequest req,
+            @RequestHeader("Authorization") String token) throws UserException {
+
+        // Validate token and get user details
         String email = tokenProvider.getEmailFromToken(token);
         UserDTO userDTO = userService.findUserByProfile(token);
-        userService.updateUser(userDTO.getId(), req);
+
+        // Make sure the user ID in the request matches the ID from the token (if required)
+        if (!userDTO.getId().equals(id)) {
+            throw new UserException("User ID mismatch.");
+        }
+
+        // Update user
+        userService.updateUser(id, req);
         ApiResponse res = new ApiResponse("User updated successfully", true);
-        return new ResponseEntity<>(res, HttpStatus.OK);
+        return ResponseEntity.ok(res);
     }
+
 }
